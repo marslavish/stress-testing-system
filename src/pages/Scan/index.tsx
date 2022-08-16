@@ -2,6 +2,7 @@ import { DownOutlined } from '@ant-design/icons';
 import { Button, Card, InputNumber, Dropdown, Menu, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { TableRowSelection } from 'antd/es/table/interface';
+import { useEffect, useState } from 'react';
 import styles from './index.less';
 
 interface DataType {
@@ -110,10 +111,44 @@ const menu = (
   />
 );
 
-const Scan: React.FC = () => {
-  const onChange = (value: number) => {
-    console.log('changed', value);
+const handleClick = () => {
+  const ws = new WebSocket('ws://192.168.3.26:38725/ws/wsCIDR');
+
+  ws.onopen = function () {
+    console.log('ws open');
+    ws.send('{"host":"192.168.5.0/24","ipFirst":["192.168.5.221"]}');
   };
+
+  ws.onmessage = function (event) {
+    console.log('ws message:');
+    console.log(event.data);
+  };
+
+  ws.onclose = function (event) {
+    if (event.wasClean) {
+      console.log(`[close] code=${event.code} reason=${event.reason}`);
+    } else {
+      // 例如服务器进程被杀死或网络中断
+      // 在这种情况下，event.code 通常为 1006
+      console.log('[close] Connection died');
+    }
+  };
+
+  ws.onerror = function (error) {
+    console.log(`[error] ${error.message}`);
+  };
+};
+
+const Scan: React.FC = () => {
+  const [ipAddrs, setIpAddrs] = useState([192, 168, 5, 0, 24]);
+
+  const onChange = (id: number) => (value: number) => {
+    setIpAddrs((prev) => prev.map((ip, idx) => (idx === id ? value : ip)));
+  };
+
+  useEffect(() => {
+    console.log(ipAddrs);
+  }, [ipAddrs]);
 
   return (
     <>
@@ -124,24 +159,44 @@ const Scan: React.FC = () => {
             <div className={styles.option}>CIDR</div>
             <div className={styles.inputs}>
               <InputNumber
+                className={styles.input}
                 min={0}
                 defaultValue={192}
-                onChange={onChange}
+                onChange={onChange(0)}
+                value={ipAddrs[0]}
+              />
+              <div className={styles.dot}>.</div>
+              <InputNumber
+                className={styles.input}
+                min={0}
+                defaultValue={168}
+                onChange={onChange(1)}
+                value={ipAddrs[1]}
+              />
+              <div className={styles.dot}>.</div>
+              <InputNumber
+                min={0}
+                defaultValue={5}
+                onChange={onChange(2)}
+                value={ipAddrs[2]}
                 className={styles.input}
               />
               <div className={styles.dot}>.</div>
               <InputNumber
                 min={0}
-                defaultValue={168}
-                onChange={onChange}
+                defaultValue={0}
+                onChange={onChange(3)}
+                value={ipAddrs[3]}
                 className={styles.input}
               />
-              <div className={styles.dot}>.</div>
-              <InputNumber min={0} defaultValue={5} onChange={onChange} className={styles.input} />
-              <div className={styles.dot}>.</div>
-              <InputNumber min={0} defaultValue={0} onChange={onChange} className={styles.input} />
               <div className={styles.slash}>/</div>
-              <InputNumber min={0} defaultValue={24} onChange={onChange} className={styles.input} />
+              <InputNumber
+                min={0}
+                defaultValue={24}
+                onChange={onChange(4)}
+                value={ipAddrs[4]}
+                className={styles.input}
+              />
             </div>
             <Dropdown.Button
               type="primary"
@@ -149,7 +204,7 @@ const Scan: React.FC = () => {
               placement="bottomRight"
               icon={<DownOutlined className={styles.icon} />}
               trigger={['click']}
-              onClick={() => console.log('clicked')}
+              onClick={() => handleClick()}
               className={styles.buttons}
               overlayClassName={styles.menu}
             >
