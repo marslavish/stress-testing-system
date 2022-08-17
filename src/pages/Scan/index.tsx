@@ -11,7 +11,7 @@ import { request } from 'umi';
 
 // TODO: dropdown (save ip), start stress testing
 // TODO: min-width, responsive input fields, remove built-in login, refactor ws send msg
-// TODO: clean up component css, organize code by grouping with comments
+// TODO: clean up component css, organize code by grouping with comments, delete unneccesary files
 
 const menu = (
   <Menu
