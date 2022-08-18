@@ -35,25 +35,36 @@ const initialReportData = {
 
 const AssetsTable = ({ tableData }: AssetsTableProps) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [reportData, setReportData] = useState([initialReportData]);
+  // const [reportData, setReportData] = useState([initialReportData]);
 
   const handleDetailsClick = () => {
     setIsModalVisible(true);
+  };
+
+  const handleDeleteClick = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
   };
 
   const columns: ColumnsType<IAssetsTable> = [
     {
       title: 'Status',
       dataIndex: 'status',
-      render: () => <Badge status="success" text="Status" />,
+      align: 'center',
+      render: () => <Badge status="success" className={styles.badge} />,
     },
     {
       title: 'MAC Address',
       dataIndex: 'mac',
+      align: 'center',
     },
     {
       title: 'Average HashRate',
       dataIndex: 'average',
+      align: 'center',
       // render: (avg) => (
       //   <span className={avg <= SETTING.AVERAGE * 1000000 ? styles.danger : ''}>
       //     {formatHashRate(avg)}
@@ -63,24 +74,38 @@ const AssetsTable = ({ tableData }: AssetsTableProps) => {
     {
       title: 'Stress Testing Times',
       dataIndex: 'stress_testing_times',
+      align: 'center',
     },
     {
       title: 'Last Testing Times',
       dataIndex: 'last_testing_times',
+      align: 'center',
     },
     {
       title: 'Operation',
-      render: () => (
-        <Button type="link" className={styles.link} onClick={handleDetailsClick}>
-          Details
-        </Button>
+      align: 'center',
+      render: (_, record) => (
+        <>
+          <Button type="link" onClick={handleDetailsClick}>
+            History Report
+          </Button>
+          <Button type="link" danger onClick={handleDeleteClick}>
+            Delete
+          </Button>
+          <Modal
+            title="Historical Report List"
+            visible={isModalVisible}
+            footer={null}
+            onCancel={handleCancel}
+            closable
+          >
+            {/* TODO: should get data from record instead */}
+            <ReportTable tableData={[initialReportData]} />
+          </Modal>
+        </>
       ),
     },
   ];
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
 
   return (
     <>
@@ -90,15 +115,6 @@ const AssetsTable = ({ tableData }: AssetsTableProps) => {
         dataSource={tableData}
         rowKey="ip"
       />
-      <Modal
-        title="Historical Report List"
-        visible={isModalVisible}
-        footer={null}
-        onCancel={handleCancel}
-        closable
-      >
-        <ReportTable tableData={reportData} />
-      </Modal>
     </>
   );
 };

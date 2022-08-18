@@ -1,4 +1,5 @@
-import { Badge, Button, Modal, Table } from 'antd';
+import { DownOutlined } from '@ant-design/icons';
+import { Badge, Button, Dropdown, Menu, Modal, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import React from 'react';
 import { useState } from 'react';
@@ -13,6 +14,24 @@ export interface IReportTable {
 interface ReportTableProps {
   tableData: IReportTable[];
 }
+
+const { Text, Link } = Typography;
+
+const menu = (
+  <Menu
+    // onClick={onMenuClick}
+    items={[
+      {
+        key: '1',
+        label: <Text type="danger">Delete</Text>,
+      },
+      {
+        key: '2',
+        label: <Link>Copy Report Link</Link>,
+      },
+    ]}
+  />
+);
 
 const ReportTable = ({ tableData }: ReportTableProps) => {
   // const [isModalVisible, setIsModalVisible] = useState(false);
@@ -29,17 +48,20 @@ const ReportTable = ({ tableData }: ReportTableProps) => {
     {
       title: 'Start Time',
       dataIndex: 'startTime',
+      align: 'center',
     },
     {
       title: 'End Time',
       dataIndex: 'endTime',
+      align: 'center',
     },
     {
       title: 'Operation',
+      align: 'center',
       render: () => (
-        <Button type="link" className={styles.link} onClick={handleDetailsClick}>
-          查看详情
-        </Button>
+        <Dropdown.Button overlay={menu} icon={<DownOutlined className={styles.icon} />}>
+          Details
+        </Dropdown.Button>
       ),
     },
   ];

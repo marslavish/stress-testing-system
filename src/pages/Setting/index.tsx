@@ -14,8 +14,8 @@ interface ISetting {
 
 const Setting = () => {
   const [setting, setSetting] = useState<ISetting>();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const getSetting = async () => {
     request('/api/v1/getSetting', {
@@ -29,7 +29,7 @@ const Setting = () => {
   };
 
   useEffect(() => {
-    getSetting();
+    // getSetting();
   }, []);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {

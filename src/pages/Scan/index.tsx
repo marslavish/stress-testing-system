@@ -1,7 +1,7 @@
-import { DownOutlined, LoadingOutlined } from '@ant-design/icons';
+import { CloseCircleOutlined, DownOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Button, Card, Dropdown, Spin, Menu, message } from 'antd';
 import { pick } from 'lodash';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CIDRInputField from './components/CIDRInputField';
 import RangeInputField from './components/RangeInputField';
 import type { IScanTable } from './components/ScanTable';
@@ -14,26 +14,6 @@ import { request } from 'umi';
 // TODO: clean up component css, organize code by grouping with comments, delete unneccesary files
 // TODO: get lint-staged:js back
 
-const menu = (
-  <Menu
-    // onClick={handleMenuClick}
-    items={[
-      {
-        label: '1st menu item',
-        key: '1',
-      },
-      {
-        label: '2nd menu item',
-        key: '2',
-      },
-      {
-        label: '3rd menu item',
-        key: '3',
-      },
-    ]}
-  />
-);
-
 const Scan: React.FC = () => {
   const [ipAddrs, setIpAddrs] = useState<number[]>([192, 168, 5, 0, 24]);
   const [rangeAddrs, setRangeAddrs] = useState<number[]>([192, 168, 5, 0, 5, 255]);
@@ -44,6 +24,7 @@ const Scan: React.FC = () => {
   const [isDisabled, setIsDisabled] = useState(true);
   const [selectedRows, setSelectedRows] = useState<IScanTable[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const isMounted = useRef(false);
 
   const onIpChange = (id: number) => (value: number) => {
     setIpAddrs((prev) => prev.map((ip, idx) => (idx === id ? value : ip)));
@@ -53,8 +34,24 @@ const Scan: React.FC = () => {
     setRangeAddrs((prev) => prev.map((ip, idx) => (idx === id ? value : ip)));
   };
 
-  const formatIp = (ip: number[]): string => {
-    return ip.join('.').replace(/\.(?=[^.]*$)/, '/');
+  useEffect(() => {
+    if (isMounted.current) {
+      localStorage.setItem('ipDefault', JSON.stringify([ipAddrs, rangeAddrs]));
+    } else {
+      isMounted.current = true;
+    }
+  }, [ipAddrs, rangeAddrs]);
+
+  useEffect(() => {
+    const savedIp = localStorage.getItem('ipDefault');
+    if (savedIp) {
+      setIpAddrs(JSON.parse(savedIp)[0]);
+      setRangeAddrs(JSON.parse(savedIp)[1]);
+    }
+  }, []);
+
+  const formatIp = (ip: number[], sep = '.'): string => {
+    return ip.join(sep).replace(/\.(?=[^.]*$)/, '/');
   };
 
   const getIps = (data: IScanTable[]) => data.map((item) => item.ip);
@@ -115,10 +112,6 @@ const Scan: React.FC = () => {
     };
   };
 
-  useEffect(() => {
-    // console.log(rangeAddrs);
-  }, [rangeAddrs]);
-
   const handleStopClick = () => {
     setIsLoading(false);
     if (socket) socket.close();
@@ -152,6 +145,31 @@ const Scan: React.FC = () => {
         stop scanning
       </Button>
     </div>
+  );
+
+  const menu = (
+    <Menu
+      // onClick={handleMenuClick}
+      items={[
+        {
+          label: (
+            <div className={styles.ipItem}>
+              <div className={styles.ipWrapper}>{formatIp(ipAddrs, ' . ')}</div>
+              <CloseCircleOutlined className={styles.circle} />
+            </div>
+          ),
+          key: '1',
+        },
+        {
+          label: '2nd menu item',
+          key: '2',
+        },
+        {
+          label: '3rd menu item',
+          key: '3',
+        },
+      ]}
+    />
   );
 
   return (
