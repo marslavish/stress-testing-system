@@ -1,8 +1,10 @@
 import { Button, Progress, Space, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { pick } from 'lodash';
 import styles from './index.less';
 
 export interface IStressTestingTable {
+  startData: any;
   key: React.Key;
   ip: string;
   mac: string;
@@ -33,6 +35,24 @@ const formatHashRate = (hashRate: number) => {
   return `${hashRate.toFixed(2)}MH/s`;
 };
 
+const formatUnit = (unit: string) => (unit.length < 2 ? '0' + unit : unit);
+
+const formatDate = (date: number) => {
+  const d = new Date(date),
+    month = '' + (d.getMonth() + 1),
+    day = '' + d.getDate(),
+    year = '' + d.getFullYear(),
+    hour = '' + d.getHours(),
+    minute = '' + d.getMinutes(),
+    second = '' + d.getSeconds();
+
+  return (
+    [year, month, day].map(formatUnit).join('-') +
+    ' ' +
+    [hour, minute, second].map(formatUnit).join(':')
+  );
+};
+
 const columns: ColumnsType<IStressTestingTable> = [
   {
     title: 'MAC Address',
@@ -45,25 +65,19 @@ const columns: ColumnsType<IStressTestingTable> = [
   },
   {
     title: 'Realtime HashRate',
-    dataIndex: 'realtime',
-    render: (avg) => formatHashRate(avg),
+    dataIndex: ['startData', 'realtime'],
+    render: (realtime) => formatHashRate(realtime),
   },
-  // {
-  //   title: 'Average HashRate',
-  //   dataIndex: 'average',
-  //   render: (avg) => (
-  //     <span className={avg <= SETTING.AVERAGE * 1000000 ? styles.danger : ''}>
-  //       {formatHashRate(avg)}
-  //     </span>
-  //   ),
-  // },
   {
     title: 'Pools',
-    dataIndex: 'pools',
+    render: (_, record) => {
+      const pool = pick(record.startData, ['pool1', 'pool2', 'pool3']);
+      return Object.values(pool).join(',');
+    },
   },
   {
     title: 'Temperature',
-    dataIndex: 'temperature',
+    dataIndex: ['startData', 'temperature'],
     render: (temp) => (
       <span className={temp >= SETTING.TEMPERATURE ? styles.danger : ''}>
         {`${temp.toFixed(2)}℃`}
@@ -72,20 +86,30 @@ const columns: ColumnsType<IStressTestingTable> = [
   },
   {
     title: 'Fan Speed',
-    dataIndex: 'fan',
+    render: (_, record) => {
+      const fan = pick(record.startData, ['fan1', 'fan2']);
+      return Object.values(fan).join(',');
+    },
   },
   {
     title: 'Start Time',
-    dataIndex: 'time',
+    dataIndex: ['startData', 'dataTime'],
+    render: (time) => formatDate(time * 1000),
   },
   {
     title: 'Progress',
     dataIndex: 'progress',
-    render: (progress) => <Progress percent={progress} size="small" />,
+    render: (_, record) => {
+      const start = record.startData.dataTime * 1000;
+      const now = new Date().getTime();
+      const progress = +(((now - start) / (48 * 3600 * 1000)) * 100).toFixed(2);
+      return <Progress percent={progress} size="small" />;
+    },
   },
   {
     title: 'Alters Number',
     dataIndex: 'alters',
+    render: (alters) => alters.length,
   },
   {
     title: 'Operation',

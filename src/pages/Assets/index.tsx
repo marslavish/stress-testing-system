@@ -6,6 +6,7 @@ import AssetsTable from './components/AssetsTable';
 import LoginPage from './components/LoginPage';
 
 // TODO: set select element height properly (same with stress table)
+// TODO: set global card container height
 
 const initialData = {
   status: 'success',

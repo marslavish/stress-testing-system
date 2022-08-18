@@ -1,5 +1,5 @@
 import { DownOutlined, LoadingOutlined } from '@ant-design/icons';
-import { Button, Card, Dropdown, Spin, Menu } from 'antd';
+import { Button, Card, Dropdown, Spin, Menu, message } from 'antd';
 import { pick } from 'lodash';
 import { useEffect, useState } from 'react';
 import CIDRInputField from './components/CIDRInputField';
@@ -43,6 +43,7 @@ const Scan: React.FC = () => {
   const [socket, setSocket] = useState({});
   const [isDisabled, setIsDisabled] = useState(true);
   const [selectedRows, setSelectedRows] = useState<IScanTable[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const onIpChange = (id: number) => (value: number) => {
     setIpAddrs((prev) => prev.map((ip, idx) => (idx === id ? value : ip)));
@@ -123,17 +124,18 @@ const Scan: React.FC = () => {
     if (socket) socket.close();
   };
 
-  const handleTestingClick = async () => {
+  const handleTestingClick = () => {
+    setIsSaving(true);
     const data = {
       minerAddresses: selectedRows.map((row) => pick(row, ['mac', 'ip'])),
     };
-    // console.log(JSON.stringify(data));
-    request('http://192.168.3.26:38725/api/v1/addToMonitor', {
+    request('/api/v1/addToMonitor', {
       method: 'post',
-      data: JSON.stringify(data),
+      data: data,
     })
-      .then(function (response) {
-        console.log(response);
+      .then(() => {
+        setIsSaving(false);
+        message.success('Save successful.');
       })
       .catch(function (error) {
         console.log(error);
@@ -199,6 +201,7 @@ const Scan: React.FC = () => {
               disabled={isDisabled}
               className={styles.button}
               onClick={handleTestingClick}
+              loading={isSaving}
             >
               Start Stress Testing
             </Button>

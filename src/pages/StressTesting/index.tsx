@@ -3,6 +3,7 @@ import { Button, Card, Input, Select, Space } from 'antd';
 import { useEffect, useState } from 'react';
 import styles from './index.less';
 import StressTestingTable from './components/StressTestingTable';
+import { request } from 'umi';
 
 const StressTesting = () => {
   const [tableData, setTableData] = useState([]);
@@ -13,8 +14,19 @@ const StressTesting = () => {
 
   const { Option } = Select;
 
+  const getMonitor = () => {
+    request('/api/v1/getMonitor', {
+      method: 'get',
+    })
+      .then((response) => {
+        setTableData(response.data);
+        console.log(response.data);
+      })
+      .catch((error) => console.log(error));
+  };
+
   useEffect(() => {
-    // getTableData()
+    getMonitor();
   }, []);
 
   const handleSelectChange = (value: string) => {

@@ -1,28 +1,14 @@
-import { Button, InputNumber } from 'antd';
+import { InputNumber } from 'antd';
 import styles from './index.less';
-import { request } from 'umi';
 
 interface CIDRInputProps {
   onIpChange: (id: number) => (value: number) => void;
   ipAddrs: number[];
 }
 
-const handleClick = async () => {
-  request('https://jsonplaceholder.typicode.com/todos/1')
-    .then(function (response) {
-      console.log(response);
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
-};
-
 const CIDRInputField = ({ onIpChange, ipAddrs }: CIDRInputProps) => {
   return (
     <>
-      <Button type="primary" onClick={handleClick}>
-        Test
-      </Button>
       <div className={styles.option}>CIDR</div>
       <div className={styles.inputs}>
         <InputNumber
