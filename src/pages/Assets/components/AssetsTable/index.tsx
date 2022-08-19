@@ -135,7 +135,7 @@ const AssetsTable = ({ tableData, refresh }: AssetsTableProps) => {
 
   return (
     <Table
-      //TODO change tooltip language to English
+      //TODO: change tooltip language to English
       columns={columns}
       dataSource={tableData}
       rowKey="mac"

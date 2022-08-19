@@ -199,7 +199,6 @@ const Scan: React.FC = () => {
 
             <div className={styles.field}>
               <RangeInputField onRangeChange={onRangeChange} rangeAddrs={rangeAddrs} />
-              {/* TODO: move dropdown menu to the left */}
               <Dropdown.Button
                 type="primary"
                 overlay={menu}
