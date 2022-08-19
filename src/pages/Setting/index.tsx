@@ -29,7 +29,7 @@ const Setting = () => {
   };
 
   useEffect(() => {
-    // getSetting();
+    getSetting();
   }, []);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {

@@ -1,48 +1,68 @@
-import { Badge, Button, Modal, Table } from 'antd';
+import { Badge, Button, message, Modal, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
 import styles from './index.less';
 import ReportTable from '../ReportTable';
+import formatHashRate from '@/utils/formatHashRate';
+import formatDate from '@/utils/formatDate';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { request } from 'umi';
 
 export interface IAssetsTable {
+  stressTests: any;
   key: React.Key;
   status: string;
   mac: string;
   average: number;
   stress_testing_times: number;
   last_testing_times: number;
+  content: any;
 }
 
 interface AssetsTableProps {
   tableData: IAssetsTable[];
+  refresh: any;
 }
 
-// const enum SETTING {
-//   AVERAGE = 80,
-//   TEMPERATURE = 95,
-// }
-
-// const formatHashRate = (hashRate: number) => {
-//   if (hashRate >= 1000000) return `${(hashRate / 1000000).toFixed(2)}TH/s`;
-//   if (hashRate >= 1000) return `${(hashRate / 1000).toFixed(2)}GH/s`;
-//   return `${hashRate.toFixed(2)}MH/s`;
-// };
-
 const initialReportData = {
+  key: 1,
   startTime: 'start',
   endTime: 'end',
 };
 
-const AssetsTable = ({ tableData }: AssetsTableProps) => {
+const AssetsTable = ({ tableData, refresh }: AssetsTableProps) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  if (tableData.length === 0) return null;
+
   // const [reportData, setReportData] = useState([initialReportData]);
 
   const handleDetailsClick = () => {
     setIsModalVisible(true);
   };
 
-  const handleDeleteClick = () => {
-    setIsModalVisible(true);
+  const handleDeleteClick = (record: IAssetsTable) => {
+    Modal.confirm({
+      title: 'Are you sure deleting this miner?',
+      icon: <ExclamationCircleOutlined style={{ color: '#ff7875' }} />,
+      okText: 'Yes',
+      cancelText: 'No',
+      onOk() {
+        request('/api/v1/server/miner/deleteMiner', {
+          method: 'POST',
+          data: {
+            mac: record.mac,
+          },
+          headers: {
+            Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')!).token}`,
+          },
+        })
+          .then(() => {
+            refresh();
+          })
+          .catch((error) => message.error(error.message));
+      },
+    });
   };
 
   const handleCancel = () => {
@@ -54,7 +74,9 @@ const AssetsTable = ({ tableData }: AssetsTableProps) => {
       title: 'Status',
       dataIndex: 'status',
       align: 'center',
-      render: () => <Badge status="success" className={styles.badge} />,
+      render: (status) => (
+        <Badge status={status === 'OK' ? 'success' : 'error'} className={styles.badge} />
+      ),
     },
     {
       title: 'MAC Address',
@@ -63,23 +85,25 @@ const AssetsTable = ({ tableData }: AssetsTableProps) => {
     },
     {
       title: 'Average HashRate',
-      dataIndex: 'average',
       align: 'center',
-      // render: (avg) => (
-      //   <span className={avg <= SETTING.AVERAGE * 1000000 ? styles.danger : ''}>
-      //     {formatHashRate(avg)}
-      //   </span>
-      // ),
+      render: (_, record) => {
+        const stressTests = record.stressTests;
+        const lastTest = stressTests[stressTests.length - 1];
+        const average = lastTest.records[lastTest.records.length - 1].average;
+        return formatHashRate(average);
+      },
     },
     {
       title: 'Stress Testing Times',
-      dataIndex: 'stress_testing_times',
+      dataIndex: 'stressTests',
       align: 'center',
+      render: (value) => value.length,
     },
     {
       title: 'Last Testing Times',
-      dataIndex: 'last_testing_times',
       align: 'center',
+      render: (data) =>
+        formatDate(data.stressTests[data.stressTests.length - 1].startData.dataTime),
     },
     {
       title: 'Operation',
@@ -89,9 +113,10 @@ const AssetsTable = ({ tableData }: AssetsTableProps) => {
           <Button type="link" onClick={handleDetailsClick}>
             History Report
           </Button>
-          <Button type="link" danger onClick={handleDeleteClick}>
+          <Button type="link" danger onClick={() => handleDeleteClick(record)}>
             Delete
           </Button>
+
           <Modal
             title="Historical Report List"
             visible={isModalVisible}
@@ -108,14 +133,12 @@ const AssetsTable = ({ tableData }: AssetsTableProps) => {
   ];
 
   return (
-    <>
-      <Table
-        //TODO change tooltip language to English
-        columns={columns}
-        dataSource={tableData}
-        rowKey="ip"
-      />
-    </>
+    <Table
+      //TODO change tooltip language to English
+      columns={columns}
+      dataSource={tableData}
+      rowKey="mac"
+    />
   );
 };
 

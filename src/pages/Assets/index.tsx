@@ -1,5 +1,5 @@
 import { SearchOutlined } from '@ant-design/icons';
-import { Button, Card, Input, message, Select } from 'antd';
+import { Button, Card, Input, Select } from 'antd';
 import { useEffect, useState } from 'react';
 import styles from './index.less';
 import AssetsTable from './components/AssetsTable';
@@ -9,19 +9,11 @@ import { request } from 'umi';
 // TODO: set select element height properly (same with stress table)
 // TODO: set global card container height
 
-const initialData = {
-  status: 'success',
-  mac: 'mac',
-  average: 'average',
-  stress_testing_times: 9,
-  last_testing_times: 2,
-};
-
 const Assets = () => {
-  const [tableData, setTableData] = useState([initialData]);
-  const [selectedOption, setSelectedOption] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
+  const [tableData, setTableData] = useState([]);
+  // const [selectedOption, setSelectedOption] = useState<string>('');
+  // const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [token, setToken] = useState<string>('');
 
   const { Option } = Select;
@@ -29,14 +21,20 @@ const Assets = () => {
   const getTableData = () => {
     request('/api/v1/server/miner/getMinersPage', {
       method: 'get',
+      params: {
+        page: 1,
+        size: 20,
+        status: null,
+        mac: null,
+      },
       headers: {
         Authorization: `Bearer ${token || JSON.parse(localStorage.getItem('user')!).token}`,
       },
     })
       .then((response) => {
-        setTableData(response.data);
+        setTableData(response.data.content);
       })
-      .catch((error) => message.error(error.message));
+      .catch((error) => console.log(error));
   };
 
   useEffect(() => {
@@ -104,7 +102,7 @@ const Assets = () => {
                 Search
               </Button>
             </div>
-            <AssetsTable tableData={tableData} />
+            <AssetsTable tableData={tableData} refresh={getTableData} />
           </Card>
         </>
       )}

@@ -9,8 +9,8 @@ const StressTesting = () => {
   const [tableData, setTableData] = useState([]);
   const [isDisabled, setIsDisabled] = useState(true);
   const [selectedRows, setSelectedRows] = useState([]);
-  const [selectedOption, setSelectedOption] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  // const [selectedOption, setSelectedOption] = useState('');
+  // const [searchQuery, setSearchQuery] = useState('');
 
   const { Option } = Select;
 
@@ -20,13 +20,18 @@ const StressTesting = () => {
     })
       .then((response) => {
         setTableData(response.data);
-        console.log(response.data);
       })
       .catch((error) => console.log(error));
   };
 
   useEffect(() => {
-    getMonitor();
+    const monitorInterval = setInterval(() => {
+      getMonitor();
+    }, 60000);
+
+    return () => {
+      clearInterval(monitorInterval);
+    };
   }, []);
 
   const handleSelectChange = (value: string) => {
@@ -65,9 +70,8 @@ const StressTesting = () => {
             className={styles.select}
           >
             <Option value="all">All</Option>
-            <Option value="jack">Jack</Option>
-            <Option value="lucy">Lucy</Option>
-            <Option value="Yiminghe">yiminghe</Option>
+            <Option value="completed">Completed</Option>
+            <Option value="executing">Executing</Option>
           </Select>
           <Input
             placeholder="Worker Name or IP or MAC Address"

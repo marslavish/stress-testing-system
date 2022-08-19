@@ -1,4 +1,7 @@
-import { Button, Progress, Space, Table } from 'antd';
+import formatDate from '@/utils/formatDate';
+import formatHashRate from '@/utils/formatHashRate';
+import { DownOutlined } from '@ant-design/icons';
+import { Dropdown, Menu, Progress, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { pick } from 'lodash';
 import styles from './index.less';
@@ -29,55 +32,64 @@ const enum SETTING {
   TEMPERATURE = 95,
 }
 
-const formatHashRate = (hashRate: number) => {
-  if (hashRate >= 1000000) return `${(hashRate / 1000000).toFixed(2)}TH/s`;
-  if (hashRate >= 1000) return `${(hashRate / 1000).toFixed(2)}GH/s`;
-  return `${hashRate.toFixed(2)}MH/s`;
-};
+const { Text, Link } = Typography;
 
-const formatUnit = (unit: string) => (unit.length < 2 ? '0' + unit : unit);
-
-const formatDate = (date: number) => {
-  const d = new Date(date),
-    month = '' + (d.getMonth() + 1),
-    day = '' + d.getDate(),
-    year = '' + d.getFullYear(),
-    hour = '' + d.getHours(),
-    minute = '' + d.getMinutes(),
-    second = '' + d.getSeconds();
-
-  return (
-    [year, month, day].map(formatUnit).join('-') +
-    ' ' +
-    [hour, minute, second].map(formatUnit).join(':')
-  );
-};
+const menu = (
+  <Menu
+    // onClick={onMenuClick}
+    items={[
+      {
+        key: '1',
+        label: <Text>Restart</Text>,
+      },
+      {
+        key: '2',
+        label: <Link>Complete</Link>,
+      },
+      {
+        key: '3',
+        label: <Link type="danger">Repair</Link>,
+      },
+      {
+        key: '4',
+        label: <Text>Download log</Text>,
+      },
+    ]}
+  />
+);
 
 const columns: ColumnsType<IStressTestingTable> = [
   {
     title: 'MAC Address',
     dataIndex: 'mac',
+    width: 160,
+    align: 'center',
   },
   {
     title: 'IP Address',
     dataIndex: 'ip',
+    width: 160,
+    align: 'center',
     render: (ip) => <a>{ip}</a>,
   },
   {
     title: 'Realtime HashRate',
     dataIndex: ['startData', 'realtime'],
+    align: 'center',
     render: (realtime) => formatHashRate(realtime),
   },
   {
     title: 'Pools',
+    align: 'center',
     render: (_, record) => {
       const pool = pick(record.startData, ['pool1', 'pool2', 'pool3']);
-      return Object.values(pool).join(',');
+      return Object.values(pool).join('');
     },
   },
   {
     title: 'Temperature',
     dataIndex: ['startData', 'temperature'],
+    align: 'center',
     render: (temp) => (
       <span className={temp >= SETTING.TEMPERATURE ? styles.danger : ''}>
         {`${temp.toFixed(2)}℃`}
@@ -86,6 +98,7 @@ const columns: ColumnsType<IStressTestingTable> = [
   },
   {
     title: 'Fan Speed',
+    align: 'center',
     render: (_, record) => {
       const fan = pick(record.startData, ['fan1', 'fan2']);
       return Object.values(fan).join(',');
@@ -93,11 +106,13 @@ const columns: ColumnsType<IStressTestingTable> = [
   },
   {
     title: 'Start Time',
+    align: 'center',
     dataIndex: ['startData', 'dataTime'],
-    render: (time) => formatDate(time * 1000),
+    render: (time) => formatDate(time),
   },
   {
     title: 'Progress',
+    align: 'center',
     dataIndex: 'progress',
     render: (_, record) => {
       const start = record.startData.dataTime * 1000;
@@ -108,20 +123,19 @@ const columns: ColumnsType<IStressTestingTable> = [
   },
   {
     title: 'Alters Number',
+    align: 'center',
     dataIndex: 'alters',
     render: (alters) => alters.length,
   },
   {
     title: 'Operation',
+    align: 'center',
+    fixed: 'right',
+    width: 150,
     render: () => (
-      <Space size={16}>
-        <Button type="text">Complete</Button>
-        <Button type="text">Restart</Button>
-        <Button danger type="text">
-          Repair
-        </Button>
-        <Button type="text">Details</Button>
-      </Space>
+      <Dropdown.Button overlay={menu} icon={<DownOutlined className={styles.icon} />}>
+        Details
+      </Dropdown.Button>
     ),
   },
 ];
@@ -134,12 +148,12 @@ const StressTestingTable = ({ tableData, setIsDisabled, setSelectedRows }: Stres
       dataSource={tableData}
       rowSelection={{
         onChange: (selectedRowKeys, selectedRows) => {
-          // console.log(`selectedRowKeys: ${selectedRowKeys.length}`, 'selectedRows: ', selectedRows);
           setIsDisabled(selectedRowKeys.length > 0 ? false : true);
           setSelectedRows(selectedRows);
         },
       }}
       rowKey="ip"
+      scroll={{ x: 1500 }}
     />
   );
 };
