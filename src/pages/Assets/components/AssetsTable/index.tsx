@@ -89,6 +89,7 @@ const AssetsTable = ({ tableData, refresh }: AssetsTableProps) => {
       render: (_, record) => {
         const stressTests = record.stressTests;
         const lastTest = stressTests[stressTests.length - 1];
+        if (lastTest.records.length === 0) return '-';
         const average = lastTest.records[lastTest.records.length - 1].average;
         return formatHashRate(average);
       },

@@ -16,8 +16,8 @@ const StressTesting = () => {
 
   const { Option } = Select;
 
-  const getMonitor = () => {
-    request('/api/v1/getMonitor', {
+  const getMonitor = async () => {
+    return request('/api/v1/getMonitor', {
       method: 'get',
     })
       .then((response) => {
@@ -38,40 +38,28 @@ const StressTesting = () => {
     };
   }, []);
 
-  const addStressTest = (statusCode: 0 | 1) => {
-    request('/api/v1/server/miner/addStressTest', {
+  const addStressTest = async (statusCode: 0 | 1) => {
+    return request('/api/v1/server/miner/addStressTest', {
       method: 'post',
       data: { ...selectedRows[0], status: statusCode },
       headers: {
         Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')!).token}`,
       },
-    })
-      .then(() => {
-        // setIsSaving(false);
-        // message.success('Save successful.');
-        console.log('addStressTest: success');
-      })
-      .catch((error) => console.log(error));
+    }).catch((error) => console.log(error));
   };
 
-  const removeFromMonitor = () => {
-    request('/api/v1/removeFromMonitor', {
+  const removeFromMonitor = async () => {
+    return request('/api/v1/removeFromMonitor', {
       method: 'post',
       data: { mac: selectedRows.map((record) => record.mac) },
       headers: {
         Authorization: `Bearer ${JSON.parse(localStorage.getItem('user')!).token}`,
       },
-    })
-      .then(() => {
-        // setIsSaving(false);
-        // message.success('Save successful.');
-        console.log('removeFromMonitor: success');
-      })
-      .catch((error) => console.log(error));
+    }).catch((error) => console.log(error));
   };
 
-  const addToMonitor = () => {
-    request('/api/v1/addToMonitor', {
+  const addToMonitor = async () => {
+    return request('/api/v1/addToMonitor', {
       method: 'post',
       data: {
         minerAddresses: selectedRows.map((row) => pick(row, ['mac', 'ip'])),
@@ -84,7 +72,7 @@ const StressTesting = () => {
   };
 
   useEffect(() => {
-    console.log(selectedRows);
+    // console.log(selectedRows);
   }, [selectedRows]);
 
   const handleSelectChange = (value: string) => {
@@ -99,23 +87,24 @@ const StressTesting = () => {
     // ...
   };
 
-  const handleCompleteClick = () => {
-    addStressTest(0);
-    removeFromMonitor();
-    getMonitor();
+  const handleCompleteClick = async () => {
+    addStressTest(0)
+      .then(() => removeFromMonitor())
+      .then(() => getMonitor());
   };
 
-  const handleRestartClick = () => {
+  const handleRestartClick = async () => {
     setIsRestarting(true);
-    removeFromMonitor();
-    addToMonitor();
-    getMonitor();
+    removeFromMonitor()
+      .then(() => addToMonitor())
+      .then(() => getMonitor())
+      .then(() => setIsRestarting(false));
   };
 
-  const handleRepairClick = () => {
-    addStressTest(1);
-    removeFromMonitor();
-    getMonitor();
+  const handleRepairClick = async () => {
+    addStressTest(1)
+      .then(() => removeFromMonitor())
+      .then(() => getMonitor());
   };
 
   return (
@@ -160,6 +149,9 @@ const StressTesting = () => {
           tableData={tableData}
           setIsDisabled={setIsDisabled}
           setSelectedRows={setSelectedRows}
+          complete={handleCompleteClick}
+          restart={handleRestartClick}
+          repair={handleRepairClick}
         />
       </Card>
     </>

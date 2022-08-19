@@ -25,6 +25,9 @@ interface StressTableProps {
   tableData: IStressTestingTable[];
   setIsDisabled: (arg: boolean) => void;
   setSelectedRows: (arg: IStressTestingTable[]) => void;
+  complete: () => void;
+  restart: () => void;
+  repair: () => void;
 }
 
 const enum SETTING {
@@ -34,113 +37,124 @@ const enum SETTING {
 
 const { Text, Link } = Typography;
 
-const menu = (
-  <Menu
-    // onClick={onMenuClick}
-    items={[
-      {
-        key: '1',
-        label: <Text>Restart</Text>,
-      },
-      {
-        key: '2',
-        label: <Link>Complete</Link>,
-      },
-      {
-        key: '3',
-        label: <Link type="danger">Repair</Link>,
-      },
-      {
-        key: '4',
-        label: <Text>Download log</Text>,
-      },
-    ]}
-  />
-);
+const StressTestingTable = ({
+  tableData,
+  setIsDisabled,
+  setSelectedRows,
+  complete,
+  restart,
+  repair,
+}: StressTableProps) => {
+  const menu = (
+    <Menu
+      // onClick={onMenuClick}
+      items={[
+        {
+          key: '1',
+          label: <Text onClick={restart}>Restart</Text>,
+        },
+        {
+          key: '2',
+          label: <Link onClick={complete}>Complete</Link>,
+        },
+        {
+          key: '3',
+          label: (
+            <Link onClick={repair} type="danger">
+              Repair
+            </Link>
+          ),
+        },
+        {
+          key: '4',
+          label: <Text>Download log</Text>,
+        },
+      ]}
+    />
+  );
 
-const columns: ColumnsType<IStressTestingTable> = [
-  {
-    title: 'MAC Address',
-    dataIndex: 'mac',
-    width: 160,
-    align: 'center',
-  },
-  {
-    title: 'IP Address',
-    dataIndex: 'ip',
-    width: 160,
-    align: 'center',
-    render: (ip) => <a>{ip}</a>,
-  },
-  {
-    title: 'Realtime HashRate',
-    dataIndex: ['startData', 'realtime'],
-    align: 'center',
-    render: (realtime) => formatHashRate(realtime),
-  },
-  {
-    title: 'Pools',
-    align: 'center',
-    render: (_, record) => {
-      const pool = pick(record.startData, ['pool1', 'pool2', 'pool3']);
-      return Object.values(pool).join('');
+  const columns: ColumnsType<IStressTestingTable> = [
+    {
+      title: 'MAC Address',
+      dataIndex: 'mac',
+      width: 160,
+      align: 'center',
     },
-  },
-  {
-    title: 'Temperature',
-    dataIndex: ['startData', 'temperature'],
-    align: 'center',
-    render: (temp) => (
-      <span className={temp >= SETTING.TEMPERATURE ? styles.danger : ''}>
-        {`${temp.toFixed(2)}℃`}
-      </span>
-    ),
-  },
-  {
-    title: 'Fan Speed',
-    align: 'center',
-    render: (_, record) => {
-      const fan = pick(record.startData, ['fan1', 'fan2']);
-      return Object.values(fan).join(',');
+    {
+      title: 'IP Address',
+      dataIndex: 'ip',
+      width: 160,
+      align: 'center',
+      render: (ip) => <a>{ip}</a>,
     },
-  },
-  {
-    title: 'Start Time',
-    align: 'center',
-    dataIndex: ['startData', 'dataTime'],
-    render: (time) => formatDate(time),
-  },
-  {
-    title: 'Progress',
-    align: 'center',
-    dataIndex: 'progress',
-    render: (_, record) => {
-      const start = record.startData.dataTime * 1000;
-      const now = new Date().getTime();
-      const progress = +(((now - start) / (48 * 3600 * 1000)) * 100).toFixed(2);
-      return <Progress percent={progress} size="small" />;
+    {
+      title: 'Realtime HashRate',
+      dataIndex: ['startData', 'realtime'],
+      align: 'center',
+      render: (realtime) => formatHashRate(realtime),
     },
-  },
-  {
-    title: 'Alters Number',
-    align: 'center',
-    dataIndex: 'alters',
-    render: (alters) => alters.length,
-  },
-  {
-    title: 'Operation',
-    align: 'center',
-    fixed: 'right',
-    width: 150,
-    render: () => (
-      <Dropdown.Button overlay={menu} icon={<DownOutlined className={styles.icon} />}>
-        Details
-      </Dropdown.Button>
-    ),
-  },
-];
+    {
+      title: 'Pools',
+      align: 'center',
+      render: (_, record) => {
+        const pool = pick(record.startData, ['pool1', 'pool2', 'pool3']);
+        return Object.values(pool).join('');
+      },
+    },
+    {
+      title: 'Temperature',
+      dataIndex: ['startData', 'temperature'],
+      align: 'center',
+      render: (temp) => (
+        <span className={temp >= SETTING.TEMPERATURE ? styles.danger : ''}>
+          {`${temp.toFixed(2)}℃`}
+        </span>
+      ),
+    },
+    {
+      title: 'Fan Speed',
+      align: 'center',
+      render: (_, record) => {
+        const fan = pick(record.startData, ['fan1', 'fan2']);
+        return Object.values(fan).join(',');
+      },
+    },
+    {
+      title: 'Start Time',
+      align: 'center',
+      dataIndex: ['startData', 'dataTime'],
+      render: (time) => formatDate(time),
+    },
+    {
+      title: 'Progress',
+      align: 'center',
+      dataIndex: 'progress',
+      render: (_, record) => {
+        const start = record.startData.dataTime * 1000;
+        const now = new Date().getTime();
+        const progress = +(((now - start) / (48 * 3600 * 1000)) * 100).toFixed(2);
+        return <Progress percent={progress} size="small" />;
+      },
+    },
+    {
+      title: 'Alters Number',
+      align: 'center',
+      dataIndex: 'alters',
+      render: (alters) => alters.length,
+    },
+    {
+      title: 'Operation',
+      align: 'center',
+      fixed: 'right',
+      width: 150,
+      render: () => (
+        <Dropdown.Button overlay={menu} icon={<DownOutlined className={styles.icon} />}>
+          Details
+        </Dropdown.Button>
+      ),
+    },
+  ];
 
-const StressTestingTable = ({ tableData, setIsDisabled, setSelectedRows }: StressTableProps) => {
   return (
     <Table
       //TODO change tooltip language to English
