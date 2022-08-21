@@ -1,7 +1,7 @@
 import { CloseCircleOutlined, DownOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Button, Card, Dropdown, Spin, Menu, message } from 'antd';
 import { pick } from 'lodash';
-import { useEffect, useRef, useState } from 'react';
+import { MouseEvent, useEffect, useRef, useState } from 'react';
 import CIDRInputField from './components/CIDRInputField';
 import RangeInputField from './components/RangeInputField';
 import type { IScanTable } from './components/ScanTable';
@@ -14,6 +14,33 @@ import { request } from 'umi';
 // TODO: clean up component css, organize code by grouping with comments, delete unneccesary files
 // TODO: get lint-staged:js back
 
+const initial = [
+  {
+    ip: [192, 168, 5, 3, 24],
+    id: '1921685324',
+  },
+  {
+    ip: [192, 168, 5, 4, 24],
+    id: '1921685424',
+  },
+  {
+    ip: [192, 168, 5, 1, 24],
+    id: '1921685124',
+  },
+  // {
+  //   range:[192,168,5,0,8,255],
+  //   id: '192168508255',
+  // },
+  // {
+  //  range:[192,168,5,0,5,255],
+  //   id: '192168505255',
+  // },
+  // {
+  //   range:[192,168,5,0,3,255],
+  //   id: '192168503255',
+  // },
+];
+
 const Scan: React.FC = () => {
   const [ipAddrs, setIpAddrs] = useState<number[]>([192, 168, 5, 0, 24]);
   const [rangeAddrs, setRangeAddrs] = useState<number[]>([192, 168, 5, 0, 5, 255]);
@@ -24,6 +51,7 @@ const Scan: React.FC = () => {
   const [isDisabled, setIsDisabled] = useState(true);
   const [selectedRows, setSelectedRows] = useState<IScanTable[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [historyScan, setHistoryScan] = useState(initial);
   const isMounted = useRef(false);
 
   const onIpChange = (id: number) => (value: number) => {
@@ -59,6 +87,10 @@ const Scan: React.FC = () => {
   const handleScanClick = (scanType: string) => () => {
     setProgress('0%');
     setIsLoading(true);
+    setHistoryScan((prev) => [
+      { ip: ipAddrs, id: ipAddrs.join('') },
+      ...prev.filter((ip) => ip.id !== ipAddrs.join('')),
+    ]);
 
     const scanTypes = {
       CIDRScan: 'wsCIDR',
@@ -147,28 +179,26 @@ const Scan: React.FC = () => {
     </div>
   );
 
+  const handleCircleClick = (e) => {
+    // console.log(e.target.parentElement.id);
+  };
+
   const menu = (
     <Menu
       // onClick={handleMenuClick}
-      items={[
-        {
+      items={historyScan.map((scan) => {
+        return {
           label: (
             <div className={styles.ipItem}>
-              <div className={styles.ipWrapper}>{formatIp(ipAddrs, ' . ')}</div>
-              <CloseCircleOutlined className={styles.circle} />
+              <div className={styles.ipWrapper}>{formatIp(scan.ip, ' . ')}</div>
+              <span id={scan.id} onClick={(e) => handleCircleClick(e)}>
+                <CloseCircleOutlined className={styles.circle} />
+              </span>
             </div>
           ),
-          key: '1',
-        },
-        {
-          label: '2nd menu item',
-          key: '2',
-        },
-        {
-          label: '3rd menu item',
-          key: '3',
-        },
-      ]}
+          key: scan.id,
+        };
+      })}
     />
   );
 
