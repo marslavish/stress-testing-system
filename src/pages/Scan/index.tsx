@@ -1,7 +1,7 @@
 import { CloseCircleOutlined, DownOutlined, LoadingOutlined } from '@ant-design/icons';
-import { Button, Card, Dropdown, Spin, Menu, message } from 'antd';
+import { Button, Card, Dropdown, Spin, Menu, message, Empty } from 'antd';
 import { pick } from 'lodash';
-import { MouseEvent, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CIDRInputField from './components/CIDRInputField';
 import RangeInputField from './components/RangeInputField';
 import type { IScanTable } from './components/ScanTable';
@@ -14,32 +14,10 @@ import { request } from 'umi';
 // TODO: clean up component css, organize code by grouping with comments, delete unneccesary files
 // TODO: get lint-staged:js back
 
-const initial = [
-  {
-    ip: [192, 168, 5, 3, 24],
-    id: '1921685324',
-  },
-  {
-    ip: [192, 168, 5, 4, 24],
-    id: '1921685424',
-  },
-  {
-    ip: [192, 168, 5, 1, 24],
-    id: '1921685124',
-  },
-  // {
-  //   range:[192,168,5,0,8,255],
-  //   id: '192168508255',
-  // },
-  // {
-  //  range:[192,168,5,0,5,255],
-  //   id: '192168505255',
-  // },
-  // {
-  //   range:[192,168,5,0,3,255],
-  //   id: '192168503255',
-  // },
-];
+interface IHistoryScan {
+  ip: number[];
+  id: string;
+}
 
 const Scan: React.FC = () => {
   const [ipAddrs, setIpAddrs] = useState<number[]>([192, 168, 5, 0, 24]);
@@ -50,23 +28,27 @@ const Scan: React.FC = () => {
   const [socket, setSocket] = useState({});
   const [isDisabled, setIsDisabled] = useState(true);
   const [selectedRows, setSelectedRows] = useState<IScanTable[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [historyScan, setHistoryScan] = useState(initial);
-  const isMounted = useRef(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [historyScan, setHistoryScan] = useState<IHistoryScan[]>([]);
+  const [isMenuVisible, setIsMenuVisible] = useState<boolean>(false);
+  const isIpMounted = useRef<boolean>(false);
+  const isHistoryMounted = useRef<boolean>(false);
 
   const onIpChange = (id: number) => (value: number) => {
+    setIsMenuVisible(false);
     setIpAddrs((prev) => prev.map((ip, idx) => (idx === id ? value : ip)));
   };
 
   const onRangeChange = (id: number) => (value: number) => {
     setRangeAddrs((prev) => prev.map((ip, idx) => (idx === id ? value : ip)));
+    setIsMenuVisible(false);
   };
 
   useEffect(() => {
-    if (isMounted.current) {
+    if (isIpMounted.current) {
       localStorage.setItem('ipDefault', JSON.stringify([ipAddrs, rangeAddrs]));
     } else {
-      isMounted.current = true;
+      isIpMounted.current = true;
     }
   }, [ipAddrs, rangeAddrs]);
 
@@ -84,9 +66,29 @@ const Scan: React.FC = () => {
 
   const getIps = (data: IScanTable[]) => data.map((item) => item.ip);
 
+  useEffect(() => {
+    if (isHistoryMounted.current) {
+      if (historyScan.length === 0) {
+        localStorage.removeItem('historyScan');
+        return;
+      }
+      localStorage.setItem('historyScan', JSON.stringify(historyScan));
+    } else {
+      isHistoryMounted.current = true;
+    }
+  }, [historyScan]);
+
+  useEffect(() => {
+    if (localStorage.getItem('historyScan')) {
+      const historyScanData = JSON.parse(localStorage.getItem('historyScan') as string);
+      setHistoryScan(historyScanData);
+    }
+  }, []);
+
   const handleScanClick = (scanType: string) => () => {
     setProgress('0%');
     setIsLoading(true);
+    setIsMenuVisible(false);
     setHistoryScan((prev) => [
       { ip: ipAddrs, id: ipAddrs.join('') },
       ...prev.filter((ip) => ip.id !== ipAddrs.join('')),
@@ -179,26 +181,49 @@ const Scan: React.FC = () => {
     </div>
   );
 
-  const handleCircleClick = (e) => {
-    // console.log(e.target.parentElement.id);
+  const handleCircleClick = (id: string) => {
+    setIsMenuVisible(true);
+    setHistoryScan((prev) => prev.filter((scan) => scan.id !== id));
   };
 
+  const handleIpMenuClick = (ip: number[]) => {
+    setIsMenuVisible(false);
+    setIpAddrs(ip);
+    // handleScanClick('CIDRScan')();
+  };
+
+  // TODO: double click outside to close the menu
   const menu = (
     <Menu
-      // onClick={handleMenuClick}
-      items={historyScan.map((scan) => {
-        return {
-          label: (
-            <div className={styles.ipItem}>
-              <div className={styles.ipWrapper}>{formatIp(scan.ip, ' . ')}</div>
-              <span id={scan.id} onClick={(e) => handleCircleClick(e)}>
-                <CloseCircleOutlined className={styles.circle} />
-              </span>
-            </div>
-          ),
-          key: scan.id,
-        };
-      })}
+      items={
+        historyScan.length === 0
+          ? [
+              {
+                label: (
+                  <Card className={styles.menuEmpty}>
+                    <Empty />
+                  </Card>
+                ),
+                key: '1',
+              },
+            ]
+          : historyScan.map((scan) => {
+              return {
+                label: (
+                  <div className={styles.ipItem}>
+                    <div className={styles.ipWrapper} onClick={() => handleIpMenuClick(scan.ip)}>
+                      {formatIp(scan.ip, ' . ')}
+                    </div>
+                    <CloseCircleOutlined
+                      className={styles.circle}
+                      onClick={() => handleCircleClick(scan.id)}
+                    />
+                  </div>
+                ),
+                key: scan.id,
+              };
+            })
+      }
     />
   );
 
@@ -215,11 +240,17 @@ const Scan: React.FC = () => {
                 type="primary"
                 overlay={menu}
                 placement="bottomRight"
-                icon={<DownOutlined className={styles.icon} />}
+                icon={
+                  <DownOutlined
+                    className={styles.icon}
+                    onClick={() => setIsMenuVisible(!isMenuVisible)}
+                  />
+                }
                 trigger={['click']}
                 onClick={handleScanClick('CIDRScan')}
                 className={styles.buttons}
                 overlayClassName={styles.menu}
+                visible={isMenuVisible}
               >
                 CIDR Scan
               </Dropdown.Button>
